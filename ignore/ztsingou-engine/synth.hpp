@@ -59,14 +59,32 @@ public:
         }
     }
 
+    void processAudioBlockNonInterleaved(const float* input[2], float* output[2], int numFrames) {
+        float l, r;
+        for (int frame = 0; frame < numFrames; ++frame) {
+            t[0].update(input[0][frame]);
+            t[1].update(input[1][frame]);
+
+            const float out11 = t[0].get_output(pos11);
+            const float out12 = t[0].get_output(pos12);
+            const float out21 = t[1].get_output(pos21);
+            const float out22 = t[1].get_output(pos22);
+
+            performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
+            output[0][frame] = l + (mono * (r-l));
+            output[1][frame] = r + (mono * (l-r));
+        }
+    }
+
     void pluck(unsigned int string, unsigned int pos=(Tsingou::NUM_MASSES/4), float amp=1.f) {
         if (string > 1) { return; }
         if (pos >= Tsingou::NUM_MASSES) { return; }
         t[string].set_pos(pos, amp);
     }
 
-    void setParam(unsigned int string, unsigned int id, float value) {
+    void setParam(unsigned int string, int id, float value) {
         if (string > 1) { return; }
+        if (id < 0) return;
         if (id >= (int)ParamId::Count) { return; }
         switch ((ParamId)id) {
             case ParamId::Beta: 
