@@ -1,6 +1,5 @@
 #include <cstdlib>
 
-
 #include <jack/jack.h>
 #include <lo/lo.h>
 
@@ -33,4 +32,6 @@ int main(int argc, char *argv[]) {
     // FIXME: add error handler!
     lo_server_thread server = lo_server_thread_new(port, NULL);
     lo_server_thread_add_method(server, "/param", "if", handle_param, NULL);
+
+    return 0;
 }
