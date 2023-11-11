@@ -1,6 +1,8 @@
 #include <cstdlib>
-#include <semaphore>
 #include <csignal>
+
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 
 #include <jack/jack.h>
@@ -15,7 +17,9 @@ jack_port_t* outPort[2];
 
 lo_server_thread server;
 
-std::binary_semaphore quitter(0);
+std::mutex m;
+std::condition_variable cv;
+bool exiting = false;
 
 int process(jack_nframes_t nframes, void *data) {
     const float* in[2];
@@ -43,7 +47,12 @@ int handle_param(const char *path, const char *types, lo_arg **argv, int argc,
 
 int handle_quit(const char *path, const char *types, lo_arg **argv, int argc,
                  lo_message data, void *user_data) {
-    quitter.release();
+    
+    {
+        std::lock_guard<std::mutex> lk(m);
+        exiting = true;
+    }
+    cv.notify_one();
     return 0;
 }
 
@@ -62,12 +71,14 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, signal_handler);
     signal(SIGABRT, signal_handler);
 
-    const char* port = "9999";
+    const char* rxPort = "9999";
     if (argc > 1) { 
-        port = argv[1];
+        rxPort = argv[1];
     }
-
-
+    const char* txPort = "9999";
+    if (argc > 2) { 
+        txPort = argv[1];
+    }
 
     ///---------------------------------
     ///--- setup jack ---
@@ -97,15 +108,20 @@ int main(int argc, char *argv[]) {
     ///--- setup OSC server ---
 
     // FIXME: should handle liblo server errors
-    server = lo_server_thread_new(port, NULL);
+    server = lo_server_thread_new(rxPort, NULL);
     lo_server_thread_add_method(server, "/param", "iif", handle_param, NULL);
     lo_server_thread_add_method(server, "/quit", "", handle_quit, NULL);
     lo_server_thread_start(server);
 
+    /// ... do any other init work here ...
+
+    lo_address tx = lo_address_new("localhost", txPort);
+    lo_send(tx, "/ready", "");
 
     ///---------------------------------
     ///------ block until quit ---------
-    quitter.acquire();
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, []{ return exiting; });
     cleanup();
     return 0;
 }
