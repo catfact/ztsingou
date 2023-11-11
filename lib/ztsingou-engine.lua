@@ -2,11 +2,27 @@
 -- this is quite a bit more efficient, at the cost of some bookkeeping here
 
 -- first, an array of readable parameter names, in specific order
+-- these parameters have a separate value for each physically-modeled string
+-- so setters for them take a string index and a value
 local param_string_keys = { 
-	amp, 
-	pickupPos1, pickupPos2, excitePos, 
-	beta, epsilon, rho, 
-	pluck
+
+	-- output amplitude
+	'amp', 
+
+	-- pickup and excitation positions (2-15)
+	'pickupPos1', 'pickupPos2', 'excitePos', 
+
+	-- tension coefficient
+	'beta',
+	
+	-- nonlinear stiffness coefficient
+	'epsilon', 
+	
+	-- damping
+	'rho', 
+
+	-- stateless parameter; sets the position of the mass at the excitation point
+	'pluck'
 }
 
 -- table associating parameter names to zero-based indices...
@@ -35,10 +51,28 @@ local param_string_ranges = {
 	pluck = {0, 1}
 }
 
---- ... do it all again for global params
+--- ... do it all again for "global" parameters
+--- these have a single value for the whole instrument
 local param_global_keys = { 
-	spread, mono, gain,
-	ips, masses
+	-- amount of stereo spread between each pickup point on each string
+	-- first pickup on each string is always panned hard left/right
+	'spread', 
+
+	-- increase to "mono-ize" the final output mix
+	'mono', 
+
+	-- input gain for excitation
+	-- applies to both channels; each input channel goes to a different string
+	'gain',
+
+	-- iterations per sample. this is rounded to an integer. 
+	-- increaseing IPS divides pitch, multiplies CPU
+	'ips', 
+
+	-- number of masses to compute per string
+	-- changes the distribution of resonant modes,
+	-- increases / decreases CPU load
+	'masses'
 }
 
 local param_global_ids = {
@@ -61,10 +95,7 @@ local param_global_ranges = {
 local e = {}
 
 -- create accessor functions for each parameter
--- FIXME: all parameters use the same OSC method, taking a string argument
---        this despite the fact that some params apply to all strings
---        (should have e.g. `/param` and `/param/string`)
-for idx, id in ipairs(param_string_ids) do
+for id, idx in ipairs(param_string_ids) do
     e[id] = function (string, value)
 		-- convert the string index to zero-base here
         osc.send(client, "/param/string", {string-1, idx, value})
@@ -81,9 +112,7 @@ local did_init = false
 
 local add_params = function()
 	print("adding engine params...")
-	local params = include("lib/params")
 	params:add_separator("ztsingou")
-	params:add_group("ztsingou")
 
 	-- TODO: building these programatically is concise, but quick and dirty
 	-- can/should fine tune behaviors per param
@@ -91,24 +120,30 @@ local add_params = function()
 	-- - `pluck` should not be saveable
 	-- - `beta`, `epsilon`, `rho` should be scaled more deliberately / abstracted
 
-	for i,k in ipairs(param_string_ids) do
+--	tab.print(param_string_keys)
+
+	for _,k in ipairs(param_string_keys) do
+		local idx = param_string_ids[k]
         local min = param_string_ranges[k][1]
         local max = param_string_ranges[k][2]
 		for string=1,2 do
-			local local id= k.."_"..string
-			params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
+			local id= k.."_"..string
+			print("--- adding param: "..id)
+			params:add_control(id, id, controlspec.new(min, max, 'lin', 0, min, ''), 
 				function(v) 
-					e.set_param_string(string, idx, v) 
+					(e[k])(string, v)
 				end
 			)
 		end
     end
-	for i,k in ipairs(param_global_ids) do
+	for _,k in ipairs(param_global_keys) do
+		local idx = param_global_ids[k]
         local min = param_global_ranges[k][1]
         local max = param_global_ranges[k][2]
+		print("--- adding param: "..k)
 		params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
 			function(v) 
-				e.set_param_global(idx, v) 
+				e[k](v)
 			end
 		)
     end
@@ -117,13 +152,17 @@ end
 --- initialize the engine by launching its process
 --- @param callback function to be executed on receiving engine-ready OSC 
 e.init = function(callback)
-	--- FIXME: defining the global OSC handler here is not very tidy or robust
-	--- in any case, we need to set up the handler before launching the engine process
 	print("--- zt-engine init")
 
+	-- add an OSC event handler
+	-- to keep this module a little more portable, 
+	-- we'll monkey-patch the script's handler instead of just overwriting it
+	-- (wouldn't hurt to have a more expressive responder system in norns)
 	print("--- setting OSC event handler")
+	local ev = osc.event
 	osc.event = function(path, args, from)
-		print("osc event: "..path)
+		if ev~=nil then ev(path, args, from) end
+		-- print(" --- ztsingou-engine osc event: "..path)
 		if path == "/ztsingou/ready" and not did_init then
 			print("engine ready!")
 			did_init = true
@@ -139,14 +178,15 @@ e.init = function(callback)
 	--- (works, but subsequent calls to system_cmd hang)
 	-- norns.system_cmd(runsh)
 
-	--- use os.execute() instead
+	--- use os.execute() instead, for now
 	os.execute(runsh)
     
 end
 
 -- clean up the engine by sending a quit message
 e.cleanup = function()
-	osc.event = nil
+	-- NB: no need to clean up up the global OSC handler, norns does it
+
 	osc.send(client, "/quit")
 	-- TODO: should verify that the engine process always exits
 	-- or just (wait) and:
