@@ -53,9 +53,9 @@ private:
         *out1 = in11;
         *out2 = in22;
         *out1 += in12 * (1.f - spread);
-        *out2 = in12 * spread;
+        *out2 += in12 * spread;
         *out2 += in21 * (1.f - spread);
-        *out1 = in21 * spread;
+        *out1 += in21 * spread;
     }
 
 public:
@@ -97,10 +97,12 @@ public:
     void processAudioBlockNonInterleaved(const float *input[2], float *output[2], int numFrames) {
         float l, r;
         for (int frame = 0; frame < numFrames; ++frame) {
-            t[0].update(input[0][frame] * gain);
-            t[1].update(input[1][frame] * gain);
+            t[0].add_to_pos(excPos[0], input[0][frame] * gain);
+            t[1].add_to_pos(excPos[1], input[1][frame] * gain);
+            t[0].update();
+            t[1].update();
 
-#if 1
+#if 0
             l = (float)t[0].get_output(pickupPos[0][0]) * amp[0];
             r = (float)t[1].get_output(pickupPos[1][0]) * amp[1];
             output[0][frame] = l + (mono * (r - l));
@@ -112,6 +114,7 @@ public:
             const auto out22 = (float)t[1].get_output(pickupPos[1][1]) * amp[1];
 
             performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
+
             output[0][frame] = l + (mono * (r - l));
             output[1][frame] = r + (mono * (l - r));
 #endif
@@ -162,7 +165,7 @@ public:
                 t[string].set_rho(value);
                 break;
             case ParamId::Pluck:
-                // FIXME: might be nice to interpolate fractional exc. pos.
+                /// FIXME: might be nice to interpolate fractional exc. pos.
                 this->pluck(string, (unsigned int) excPos[string], value);
                 break;
             case ParamId::Count:

@@ -18,7 +18,7 @@
 
 class Tsingou {
 public:
-    static constexpr int NUM_MASSES = 8;
+    static constexpr int NUM_MASSES = 16;
 
 
     double get_output(double pos) {
@@ -29,7 +29,7 @@ public:
         return x[pi0] + pf * (x[pi1] - x[pi0]);
     }
 
-    void update(double input) {
+    void update() {
         for (int i = 0; i < ips; i++) {
             update_f();
             update_v();
@@ -39,6 +39,15 @@ public:
 
     void set_pos(int pos, double val) {
         if (pos > 1 && pos < (NUM_MASSES - 2)) {
+            if (val > 1.0) { val = 1.0; }
+            if (val < -1.0) { val = -1.0; }
+            x[pos] = val;
+        }
+    }
+
+    void add_to_pos(int pos, double val) {
+        if (pos > 1 && pos < (NUM_MASSES - 2)) {
+            val += x[pos];
             if (val > 1.0) { val = 1.0; }
             if (val < -1.0) { val = -1.0; }
             x[pos] = val;
