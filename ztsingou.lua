@@ -1,6 +1,7 @@
 local e = include('lib/ztsingou-engine')
 
 local engine_init_callback = function()
+    params:default()
     params:bang()
 end
 

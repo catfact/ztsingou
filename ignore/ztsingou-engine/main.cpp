@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     /// ... do any other init work here ...
     fprintf(stderr, "[--zt--] sending ready message; port = %s\n", txPort);
     lo_address tx = lo_address_new("127.0.0.1", txPort);
-    lo_send(tx, "/ready", "");
+    lo_send(tx, "/ztsingou/ready", "");
 
     ///---------------------------------
     ///------ block until quit ---------

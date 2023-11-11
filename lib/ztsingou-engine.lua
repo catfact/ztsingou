@@ -9,11 +9,19 @@ local param_string_keys = {
 	pluck
 }
 
--- tables associating parameter names to zero-based indices...
-local param_string_ids = {}
-for i,k in ipairs(param_string_keys) do
-	param_string_ids[k] = i-1
-end
+-- table associating parameter names to zero-based indices...
+-- this matches enum in engine code
+-- order need not match param_string_keys
+local param_string_ids = {
+	amp = 0,
+	pickupPos1 = 1,
+	pickupPos2 = 2,
+	excitePos = 3,
+	beta = 4,
+	epsilon = 5,
+	rho = 6,
+	pluck = 7
+}
 
 -- ...and ranges 
 local param_string_ranges = { 
@@ -33,10 +41,13 @@ local param_global_keys = {
 	ips, masses
 }
 
-local param_global_ids = {}
-for i,k in ipairs(param_global_keys) do
-	param_global_ids[k] = i-1
-end
+local param_global_ids = {
+	spread = 0,
+	mono = 1,
+	gain = 2,
+	ips = 3,
+	masses = 4
+}
 
 local param_global_ranges = { 
 	spread = {0, 1},
@@ -48,21 +59,12 @@ local param_global_ranges = {
 
 --- engine-like table
 local e = {}
--- e.param_string_keys = param_string_keys
--- e.param_string_ids = param_string_ids
--- e.param_string_ranges = param_string_ranges
-
--- e.param_global_keys = param_global_keys
--- e.param_global_ids = param_global_ids
--- e.param_global_ranges = param_global_ranges
-
-tab.print(param_string_keys)
 
 -- create accessor functions for each parameter
 -- FIXME: all parameters use the same OSC method, taking a string argument
 --        this despite the fact that some params apply to all strings
 --        (should have e.g. `/param` and `/param/string`)
-for id, idx in ipairs(param_string_ids) do
+for idx, id in ipairs(param_string_ids) do
     e[id] = function (string, value)
 		-- convert the string index to zero-base here
         osc.send(client, "/param/string", {string-1, idx, value})
@@ -71,7 +73,6 @@ end
 
 for id, idx in ipairs(param_global_ids) do
     e[id] = function (value)
-		-- convert the string index to zero-base here
         osc.send(client, "/param/global", {idx, value})
     end
 end
@@ -80,10 +81,21 @@ local did_init = false
 
 local add_params = function()
 	print("adding engine params...")
+	local params = include("lib/params")
+	params:add_separator("ztsingou")
+	params:add_group("ztsingou")
+
+	-- TODO: building these programatically is concise, but quick and dirty
+	-- can/should fine tune behaviors per param
+	-- - `ips`, `masses` should be integers
+	-- - `pluck` should not be saveable
+	-- - `beta`, `epsilon`, `rho` should be scaled more deliberately / abstracted
+
 	for i,k in ipairs(param_string_ids) do
-        local min = param_ranges[k][1]
-        local max = param_ranges[k][2]
+        local min = param_string_ranges[k][1]
+        local max = param_string_ranges[k][2]
 		for string=1,2 do
+			local local id= k.."_"..string
 			params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
 				function(v) 
 					e.set_param_string(string, idx, v) 
@@ -92,8 +104,8 @@ local add_params = function()
 		end
     end
 	for i,k in ipairs(param_global_ids) do
-        local min = param_ranges[k][1]
-        local max = param_ranges[k][2]
+        local min = param_global_ranges[k][1]
+        local max = param_global_ranges[k][2]
 		params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
 			function(v) 
 				e.set_param_global(idx, v) 
@@ -112,7 +124,7 @@ e.init = function(callback)
 	print("--- setting OSC event handler")
 	osc.event = function(path, args, from)
 		print("osc event: "..path)
-		if path == "/ready" and not did_init then
+		if path == "/ztsingou/ready" and not did_init then
 			print("engine ready!")
 			did_init = true
 			add_params()
@@ -126,6 +138,8 @@ e.init = function(callback)
 	--- hm, norns.system_cmd() seems to get stuck here... 
 	--- (works, but subsequent calls to system_cmd hang)
 	-- norns.system_cmd(runsh)
+
+	--- use os.execute() instead
 	os.execute(runsh)
     
 end
@@ -134,7 +148,9 @@ end
 e.cleanup = function()
 	osc.event = nil
 	osc.send(client, "/quit")
-	-- TODO: for test purposes, should wait here and then verify that the engine process has exited
+	-- TODO: should verify that the engine process always exits
+	-- or just (wait) and:
+	-- os.execute("pidof ztsingou | xargs kill")
 end
 
 return e
