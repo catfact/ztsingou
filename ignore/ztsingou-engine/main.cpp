@@ -35,15 +35,22 @@ int process(jack_nframes_t nframes, void *data) {
     return 0;
 }
 
-int handle_param(const char *path, const char *types, lo_arg **argv, int argc,
+int handle_param_global(const char *path, const char *types, lo_arg **argv, int argc,
+			     lo_message data, void *user_data) {
+    auto id = argv[0]->i;
+    auto val = argv[1]->f;
+    synth.setParamGlobal(id, val);
+    return 0;
+}
+
+int handle_param_string(const char *path, const char *types, lo_arg **argv, int argc,
 			     lo_message data, void *user_data) {
     auto id = argv[0]->i;
     auto string = (unsigned int)argv[1]->i;
     auto val = argv[2]->f;
-    synth.setParam(string, id, val);
+    synth.setParamString(string, id, val);
     return 0;
 }
-
 
 int handle_quit(const char *path, const char *types, lo_arg **argv, int argc,
                  lo_message data, void *user_data) {
@@ -109,7 +116,8 @@ int main(int argc, char *argv[]) {
 
     // FIXME: should handle liblo server errors
     server = lo_server_thread_new(rxPort, NULL);
-    lo_server_thread_add_method(server, "/param", "iif", handle_param, NULL);
+    lo_server_thread_add_method(server, "/param/string", "iif", handle_param_string, NULL);
+    lo_server_thread_add_method(server, "/param/global", "if", handle_param_global, NULL);
     lo_server_thread_add_method(server, "/quit", "", handle_quit, NULL);
     lo_server_thread_start(server);
 

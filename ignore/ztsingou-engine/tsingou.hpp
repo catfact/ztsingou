@@ -71,6 +71,8 @@ private:
     float sr;
     // iterations per sample
     int ips;
+    // variable mass count
+    int masses{NUM_MASSES};
 
     //----- model parameters
     // "physical" time step (in seconds)
@@ -94,7 +96,7 @@ private:
         double fx;
         //double *x = x;
         double d0, d1;
-        for (int i = 1; i < NUM_MASSES - 1; i++) {
+        for (int i = 1; i < masses - 1; i++) {
             d1 = x[i + 1] - x[i];
             d0 = x[i] - x[i - 1];
             fx = d1 - d0 + epsilon * ((d1 * d1 * d1) - (d0 * d0 * d0));
@@ -107,7 +109,7 @@ private:
     // update velocities
     void update_v() {
         // start and end positions are fixed at zero
-        for (int i = 1; i < NUM_MASSES - 1; i++) {
+        for (int i = 1; i < (masses - 1); i++) {
             v[i] += f[i] * dt;
         }
     }
@@ -115,7 +117,7 @@ private:
     // update positions
     void update_x() {
         // start and end positions are fixed at zero
-        for (int i = 1; i < NUM_MASSES - 1; i++) {
+        for (int i = 1; i < (masses - 1); i++) {
             x[i] += v[i];
         }
     }
@@ -138,4 +140,12 @@ public:
     }
 
     void set_ips(int val) { ips = val; }
+
+    void set_masses(unsigned int num) { 
+        if (num < NUM_MASSES) {
+            masses = num;
+            x[masses-1] = 0.0;
+        }
+
+    }
 };

@@ -9,19 +9,25 @@ public:
     /// - iterations per sample (`ips`)
     /// - mass count (`mc`; keep `x[mc]` at zero, and don't process `x[i]` for `i>mc`)
 
-    enum class ParamId : unsigned int {
+    enum class ParamStringId : unsigned int {
         Amp = 0,
-        Spread = 1,
-        Mono = 2,
-        Gain = 3,
-        PickupPos1 = 4,
-        PickupPos2 = 5,
-        ExcitePos = 6,
-        Beta = 7,
-        Epsilon = 8,
-        Rho = 9,
-        Pluck = 10,
-        Count
+        PickupPos1 = 1,
+        PickupPos2 = 2,
+        ExcitePos = 3,
+        Beta = 4,
+        Epsilon = 5,
+        Rho = 6,
+        Pluck = 7,
+        Count = 8
+    };
+
+    enum class ParamGlobalId : unsigned int {
+        Spread = 0,
+        Mono = 1,
+        Gain = 2,
+        Ips = 3,
+        Masses = 4,
+        Count = 5
     };
 
 private:
@@ -132,47 +138,65 @@ public:
         t[string].set_pos((int)pos, amp);
     }
 
-    void setParam(unsigned int string, int id, float value) {
-        if (string > 1) { return; }
+    void setParamGlobal(int id, float value) {
         if (id < 0) return;
-        if (id >= (int) ParamId::Count) { return; }
-        switch ((ParamId) id) {
-            case ParamId::Amp:
-                amp[string] = value;
-                break;
-            case ParamId::Spread:
-                /// FIXME: i guess better have separate `setParam` and `setStringParam` methods
+        if (id >= (int) ParamGlobalId::Count) { return; }
+        switch ((ParamGlobalId) id) {
+            case ParamGlobalId::Spread:
                 spread = value;
                 break;
-            case ParamId::Mono:
+            case ParamGlobalId::Mono:
                 mono = value;
                 break;
-            case ParamId::Gain:
+            case ParamGlobalId::Gain:
                 gain = value;
                 break;
-            case ParamId::PickupPos1:
+            case ParamGlobalId::Ips:
+                t[0].set_ips((int)value);
+                t[1].set_ips((int)value);
+                break;
+            case ParamGlobalId::Masses:
+                if (value > 0 && value < Tsingou::NUM_MASSES) {
+                    t[0].set_masses((int)value);
+                    t[1].set_masses((int)value);
+                }
+                break;
+            case ParamGlobalId::Count:
+                break;
+        }
+    }
+
+        void setParamString(unsigned int string, int id, float value) {
+        if (string > 1) { return; }
+        if (id < 0) return;
+        if (id >= (int) ParamStringId::Count) { return; }
+        switch ((ParamStringId) id) {
+            case ParamStringId::Amp:
+                amp[string] = value;
+                break;
+            case ParamStringId::PickupPos1:
                 pickupPos[string][0] = value;
                 break;
-            case ParamId::PickupPos2:
+            case ParamStringId::PickupPos2:
                 pickupPos[string][1] = value;
                 break;
-            case ParamId::ExcitePos:
+            case ParamStringId::ExcitePos:
                 excPos[string] = value;
                 break;
-            case ParamId::Beta:
+            case ParamStringId::Beta:
                 t[string].set_beta(value);
                 break;
-            case ParamId::Epsilon:
+            case ParamStringId::Epsilon:
                 t[string].set_epsilon(value);
                 break;
-            case ParamId::Rho:
+            case ParamStringId::Rho:
                 t[string].set_rho(value);
                 break;
-            case ParamId::Pluck:
+            case ParamStringId::Pluck:
                 /// FIXME: might be nice to interpolate fractional exc. pos.
                 this->pluck(string, (unsigned int) excPos[string], value);
                 break;
-            case ParamId::Count:
+            case ParamStringId::Count:
             default:;
                 break;
         }
