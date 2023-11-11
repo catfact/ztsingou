@@ -5,6 +5,10 @@
 class Synth {
 public:
 
+    /// TODO: could use a couple other parameters:
+    /// - iterations per sample (`ips`)
+    /// - mass count (`mc`; keep `x[mc]` at zero, and don't process `x[i]` for `i>mc`)
+
     enum class ParamId : unsigned int {
         Amp = 0,
         Spread = 1,

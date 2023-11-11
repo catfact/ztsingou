@@ -20,7 +20,6 @@ class Tsingou {
 public:
     static constexpr int NUM_MASSES = 16;
 
-
     double get_output(double pos) {
         int pi0 = (int) pos;
         double pf = pos - (double) pi0;
