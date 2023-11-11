@@ -82,14 +82,15 @@ int main(int argc, char *argv[]) {
     if (argc > 1) { 
         rxPort = argv[1];
     }
-    const char* txPort = "9999";
+    const char* txPort = "8888";
     if (argc > 2) { 
-        txPort = argv[1];
+        txPort = argv[2];
     }
 
     ///---------------------------------
     ///--- setup jack ---
     // create jack client
+    fprintf(stderr, "[--zt--] creating JACK client...\n");
     client = jack_client_open("ztsingou-engine", JackNullOption, NULL);
     if (client == nullptr) {
         fprintf(stderr, "jack server not running?\n");
@@ -107,7 +108,7 @@ int main(int argc, char *argv[]) {
 
     // start the jack client
     if (jack_activate(client)) {
-        fprintf(stderr, "cannot activate client");
+        fprintf(stderr, "cannot activate client\n");
         return 1;
     }
 
@@ -115,6 +116,8 @@ int main(int argc, char *argv[]) {
     ///--- setup OSC server ---
 
     // FIXME: should handle liblo server errors
+
+    fprintf(stderr, "[--zt--] starting OSC server...\n");
     server = lo_server_thread_new(rxPort, NULL);
     lo_server_thread_add_method(server, "/param/string", "iif", handle_param_string, NULL);
     lo_server_thread_add_method(server, "/param/global", "if", handle_param_global, NULL);
@@ -122,8 +125,8 @@ int main(int argc, char *argv[]) {
     lo_server_thread_start(server);
 
     /// ... do any other init work here ...
-
-    lo_address tx = lo_address_new("localhost", txPort);
+    fprintf(stderr, "[--zt--] sending ready message; port = %s\n", txPort);
+    lo_address tx = lo_address_new("127.0.0.1", txPort);
     lo_send(tx, "/ready", "");
 
     ///---------------------------------

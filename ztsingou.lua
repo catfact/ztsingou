@@ -1,15 +1,6 @@
-local e = include('ignore/ztsingou-engine')
+local e = include('lib/ztsingou-engine')
 
 local engine_init_callback = function()
-    for i,k in ipairs(e.param_ids) do
-        local min = e.param_ranges[k][1]
-        local max = e.param_ranges[k][2]
-        params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
-            function(v) 
-                e.set_param(idx, v) 
-            end
-        )
-    end
     params:bang()
 end
 
