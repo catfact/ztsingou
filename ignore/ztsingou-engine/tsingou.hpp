@@ -61,14 +61,14 @@ private:
     //--- synthesis parameters
     // sample rate
     float sr;
-    // iterations per sample (function of samplerate)
-    double ips;
+    // iterations per sample
+    int ips;
     // phasor / counter to decouple time step from sample rate
-    double phase;
-    // output position (normalized)
-    double pickup;
-    // output value
-    double out;
+//    double phase;
+//    // output position (normalized)
+//    double pickup;
+//    // output value
+//    double out;
 
     //----- model parameters
     // "physical" time step (in seconds)
@@ -90,7 +90,7 @@ private:
     void update_f() {
         // start and end positions are fixed at zero
         double fx;
-        double *x = x;
+        //double *x = x;
         double d0, d1;
         for (int i = 1; i < NUM_MASSES - 1; i++) {
             d1 = x[i + 1] - x[i];
@@ -128,7 +128,7 @@ public:
     }
 
     void clear_state() {
-        phase = 0.0;
+        //phase = 0.0;
         for (int i = 0; i < NUM_MASSES; i++) {
             x[i] = 0.0;
             v[i] = 0.0;
@@ -139,6 +139,8 @@ public:
     void set_sr(float val) {
         sr = val;
     }
+
+    void set_ips(int val) { ips = val; }
 
 
 };
