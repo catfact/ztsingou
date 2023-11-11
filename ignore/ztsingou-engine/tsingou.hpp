@@ -63,12 +63,6 @@ private:
     float sr;
     // iterations per sample
     int ips;
-    // phasor / counter to decouple time step from sample rate
-//    double phase;
-//    // output position (normalized)
-//    double pickup;
-//    // output value
-//    double out;
 
     //----- model parameters
     // "physical" time step (in seconds)
@@ -128,7 +122,6 @@ public:
     }
 
     void clear_state() {
-        //phase = 0.0;
         for (int i = 0; i < NUM_MASSES; i++) {
             x[i] = 0.0;
             v[i] = 0.0;
@@ -136,11 +129,5 @@ public:
         }
     }
 
-    void set_sr(float val) {
-        sr = val;
-    }
-
     void set_ips(int val) { ips = val; }
-
-
 };

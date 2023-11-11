@@ -46,6 +46,8 @@ private:
     // excitation positions, 1 per string
     float excPos[2];
 
+    /// TODO: would be nice to have built-in smoothers/slew limiters for many/all params
+
     static void performStereoSpread(float in11, float in12, float in21, float in22,
                                     float spread, float *out1, float *out2) {
         *out1 = in11;
@@ -64,7 +66,7 @@ public:
             t[i].clear_state();
         }
 
-        pickupPos[0][0] = Tsingou::NUM_MASSES / 4;
+        pickupPos[0][0] = (float)Tsingou::NUM_MASSES / 4;
         pickupPos[0][1] = pickupPos[0][0] * 3;
         pickupPos[1][0] = pickupPos[0][0];
         pickupPos[1][1] = pickupPos[0][1];
@@ -73,46 +75,54 @@ public:
         excPos[1] = excPos[0];
     }
 
-    void processAudioBlockInterleaved(const float *input, float *output, int numFrames) {
-        float *dst = output;
-        const float *src = input;
-        float l, r;
-        for (int frame = 0; frame < numFrames; ++frame) {
-            t[0].update(*src++);
-            t[1].update(*src++);
-
-            const auto out11 = (float) t[0].get_output(pickupPos[0][0]);
-            const auto out12 = (float) t[0].get_output(pickupPos[0][1]);
-            const auto out21 = (float) t[1].get_output(pickupPos[1][0]);
-            const auto out22 = (float) t[1].get_output(pickupPos[1][1]);
-
-            performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
-            *dst++ = l + (mono * (r - l));
-            *dst++ = r + (mono * (l - r));
-        }
-    }
+//    void processAudioBlockInterleaved(const float *input, float *output, int numFrames) {
+//        float *dst = output;
+//        const float *src = input;
+//        float l, r;
+//        for (int frame = 0; frame < numFrames; ++frame) {
+//            t[0].update(*src++);
+//            t[1].update(*src++);
+//
+//            const auto out11 = (float) t[0].get_output(pickupPos[0][0]);
+//            const auto out12 = (float) t[0].get_output(pickupPos[0][1]);
+//            const auto out21 = (float) t[1].get_output(pickupPos[1][0]);
+//            const auto out22 = (float) t[1].get_output(pickupPos[1][1]);
+//
+//            performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
+//            *dst++ = l + (mono * (r - l));
+//            *dst++ = r + (mono * (l - r));
+//        }
+//    }
 
     void processAudioBlockNonInterleaved(const float *input[2], float *output[2], int numFrames) {
         float l, r;
         for (int frame = 0; frame < numFrames; ++frame) {
-            t[0].update(input[0][frame]);
-            t[1].update(input[1][frame]);
+            t[0].update(input[0][frame] * gain);
+            t[1].update(input[1][frame] * gain);
 
-            const float out11 = t[0].get_output(pickupPos[0][0]);
-            const float out12 = t[0].get_output(pickupPos[0][1]);
-            const float out21 = t[1].get_output(pickupPos[1][0]);
-            const float out22 = t[1].get_output(pickupPos[1][1]);
+#if 1
+            l = (float)t[0].get_output(pickupPos[0][0]) * amp[0];
+            r = (float)t[1].get_output(pickupPos[1][0]) * amp[1];
+            output[0][frame] = l + (mono * (r - l));
+            output[1][frame] = r + (mono * (l - r));
+#else
+            const auto out11 = (float)t[0].get_output(pickupPos[0][0]) * amp[0];
+            const auto out12 = (float)t[0].get_output(pickupPos[0][1]) * amp[0];
+            const auto out21 = (float)t[1].get_output(pickupPos[1][0]) * amp[1];
+            const auto out22 = (float)t[1].get_output(pickupPos[1][1]) * amp[1];
 
             performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
             output[0][frame] = l + (mono * (r - l));
             output[1][frame] = r + (mono * (l - r));
+#endif
         }
     }
 
     void pluck(unsigned int string, unsigned int pos = (Tsingou::NUM_MASSES / 4), float amp = 1.f) {
         if (string > 1) { return; }
         if (pos >= Tsingou::NUM_MASSES) { return; }
-        t[string].set_pos(pos, amp);
+        if (pos < 1) { return; }
+        t[string].set_pos((int)pos, amp);
     }
 
     void setParam(unsigned int string, int id, float value) {
@@ -124,6 +134,7 @@ public:
                 amp[string] = value;
                 break;
             case ParamId::Spread:
+                /// FIXME: i guess better have separate `setParam` and `setStringParam` methods
                 spread = value;
                 break;
             case ParamId::Mono:
