@@ -120,7 +120,7 @@ private:
 
     //---------------------
     //---- extern functions
-
+public:
     void init(double aDt, float aSr) {
         dt = aDt;
         sr = aSr;

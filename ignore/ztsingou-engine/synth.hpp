@@ -5,7 +5,13 @@
 class Synth { 
 public:
 
-    enum class ParamId: unsigned int { Beta, Epsilon, Rho, Count };
+    enum class ParamId: unsigned int {
+        Amp, Spread, Mono, Gain,
+        PickupPos1, PickupPos2, ExcitePos,
+        Beta, Epsilon, Rho,
+        Pluck,
+        Count
+    };
 
  private:
 
@@ -19,16 +25,20 @@ public:
     // string models
     Tsingou t[2];
 
+    // amplitude per string
+    float amp[2] = {0, 0};
     // stereo spread per string
     float spread = 0.75f;
     // post-spread anti-width
     float mono = 0.f;
+    // input amplitude
+    float gain = 0.f;
 
-    // pickup positions, 2 per strirng
-    float pos11 = Tsingou::NUM_MASSES / 4;
-    float pos12 = pos11 * 3;
-    float pos21 = pos11;
-    float pos22 = pos12;
+    // pickup positions, 2 per string
+    float pickupPos[2][2];
+    // excitation positions, 1 per string
+    float excPos[2];
+
     static void performStereoSpread(float in11, float in12, float in21, float in22, 
         float spread, float* out1, float* out2) { 
         *out1 = in11;
@@ -40,6 +50,17 @@ public:
     }
 
 public:
+    Synth() {
+        for (int i=0; i<2; ++i) {
+            t[i].init(sr_default, dt);
+            t[i].clear_state();
+        }
+
+        pickupPos[0][0] = Tsingou::NUM_MASSES / 4;
+        pickupPos[0][1] = pickupPos[0][0] * 3;
+        pickupPos[1][0] = pickupPos[0][0];
+        pickupPos[1][1] = pickupPos[0][1];
+    }
     void processAudioBlockInterleaved(const float* input, float* output, int numFrames) {
         float* dst = output;
         const float *src = input;
@@ -48,10 +69,10 @@ public:
             t[0].update(*src++);
             t[1].update(*src++);
 
-            const float out11 = t[0].get_output(pos11);
-            const float out12 = t[0].get_output(pos12);
-            const float out21 = t[1].get_output(pos21);
-            const float out22 = t[1].get_output(pos22);
+            const auto out11 = (float)t[0].get_output(pickupPos[0][0]);
+            const auto out12 = (float)t[0].get_output(pickupPos[0][1]);
+            const auto out21 = (float)t[1].get_output(pickupPos[1][0]);
+            const auto out22 = (float)t[1].get_output(pickupPos[1][1]);
 
             performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
             *dst++ = l + (mono * (r-l));
@@ -65,10 +86,10 @@ public:
             t[0].update(input[0][frame]);
             t[1].update(input[1][frame]);
 
-            const float out11 = t[0].get_output(pos11);
-            const float out12 = t[0].get_output(pos12);
-            const float out21 = t[1].get_output(pos21);
-            const float out22 = t[1].get_output(pos22);
+            const float out11 = t[0].get_output(pickupPos[0][0]);
+            const float out12 = t[0].get_output(pickupPos[0][1]);
+            const float out21 = t[1].get_output(pickupPos[1][0]);
+            const float out22 = t[1].get_output(pickupPos[1][1]);
 
             performStereoSpread(out11, out12, out21, out22, spread, &l, &r);
             output[0][frame] = l + (mono * (r-l));
@@ -87,6 +108,24 @@ public:
         if (id < 0) return;
         if (id >= (int)ParamId::Count) { return; }
         switch ((ParamId)id) {
+            case ParamId::Amp:
+                amp[string] = value;
+                break;
+            case ParamId::Spread:
+                spread = value;
+                break;
+            case ParamId::Mono:
+                mono = value;
+                break;
+            case ParamId::PickupPos1:
+                pickupPos[string][0] = value;
+                break;
+            case ParamId::PickupPos2:
+                pickupPos[string][1] = value;
+                break;
+            case ParamId::ExcitePos:
+                excPos[string] = value;
+                break;
             case ParamId::Beta: 
                 t[string].set_beta(value);
                 break;
@@ -95,6 +134,10 @@ public:
                 break;
             case ParamId::Rho:
                 t[string].set_rho(value);
+                break;
+            case ParamId::Pluck:
+                // FIXME: might be nice to interpolate fractional exc. pos.
+                pluck(string,(unsigned int)excPos[string], value);
                 break;
         }
     }
