@@ -39,16 +39,16 @@ local param_string_ids = {
 	pluck = 7
 }
 
--- ...and ranges 
+-- ...and ranges; each is {min, max, default}
 local param_string_ranges = { 
-	amp = {0, 1},
-	pickupPos1 = {1, 14},
-	pickupPos2 = {1, 14},
-	excitePos = {1, 14},
-	beta = {0, 30},
-	epsilon = {0, 20},
-	rho = {0, 20},
-	pluck = {0, 1}
+	amp = {0, 1, 0.5},
+	pickupPos1 = {1, 14, 2},
+	pickupPos2 = {1, 14, 6},
+	excitePos = {1, 14, 5},
+	beta = {0, 30, 1},
+	epsilon = {0, 20, 0},
+	rho = {0, 20, 0.2},
+	pluck = {0, 1, 0}
 }
 
 --- ... do it all again for "global" parameters
@@ -84,28 +84,38 @@ local param_global_ids = {
 }
 
 local param_global_ranges = { 
-	spread = {0, 1},
-	mono = {0, 1},
-	gain = {0, 2},
-	ips = {1, 32},
-	masses = {3, 16}
+	spread = {0, 1, 1},
+	mono = {0, 1, 0},
+	gain = {0, 2, 0},
+	ips = {1, 32, 16},
+	masses = {3, 16, 8}
 }
 
 --- engine-like table
 local e = {}
+local client = { "127.0.0.1", "9998" }
 
 -- create accessor functions for each parameter
-for id, idx in ipairs(param_string_ids) do
+for id, idx in pairs(param_string_ids) do
     e[id] = function (string, value)
 		-- convert the string index to zero-base here
+		
+		print("setting param: "..id.."["..string.."]")
         osc.send(client, "/param/string", {string-1, idx, value})
     end
 end
 
-for id, idx in ipairs(param_global_ids) do
+for id, idx in pairs(param_global_ids) do
     e[id] = function (value)
+		print("setting param: "..id)	
         osc.send(client, "/param/global", {idx, value})
     end
+end
+
+--tab.print(e)
+print("--- engine table: ")
+for k,v in pairs(e) do
+	print(""..k.."\t"..tostring(v))
 end
 
 local did_init = false
@@ -126,26 +136,26 @@ local add_params = function()
 		local idx = param_string_ids[k]
         local min = param_string_ranges[k][1]
         local max = param_string_ranges[k][2]
+        local init = param_string_ranges[k][3]
 		for string=1,2 do
 			local id= k.."_"..string
 			print("--- adding param: "..id)
-			params:add_control(id, id, controlspec.new(min, max, 'lin', 0, min, ''), 
-				function(v) 
-					(e[k])(string, v)
-				end
-			)
+			params:add_control(id, id, controlspec.new(min, max, 'lin', 0, init, ''))
+			params:set_action(id, function(v) 
+				(e[k])(string, v)
+			end)	
 		end
     end
 	for _,k in ipairs(param_global_keys) do
 		local idx = param_global_ids[k]
         local min = param_global_ranges[k][1]
         local max = param_global_ranges[k][2]
+        local init = param_global_ranges[k][3]
 		print("--- adding param: "..k)
-		params:add_control(k, k, controlspec.new(min, max, 'lin', 0, min, ''), 
-			function(v) 
-				e[k](v)
-			end
-		)
+		params:add_control(k, k, controlspec.new(min, max, 'lin', 0, init, ''))
+		params:set_action(k, function(v) 
+			(e[k])(v)
+		end)
     end
 end
 

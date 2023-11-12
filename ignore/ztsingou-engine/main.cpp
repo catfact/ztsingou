@@ -2,6 +2,7 @@
 #include <csignal>
 
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 #include <thread>
 
@@ -39,6 +40,7 @@ int handle_param_global(const char *path, const char *types, lo_arg **argv, int 
 			     lo_message data, void *user_data) {
     auto id = argv[0]->i;
     auto val = argv[1]->f;
+    std::cerr << "param global: " << id << ", " << val << std::endl;
     synth.setParamGlobal(id, val);
     return 0;
 }
@@ -48,6 +50,7 @@ int handle_param_string(const char *path, const char *types, lo_arg **argv, int 
     auto id = argv[0]->i;
     auto string = (unsigned int)argv[1]->i;
     auto val = argv[2]->f;
+    std::cerr << "param string: " << id << ", " << string << ", " << val << std::endl;
     synth.setParamString(string, id, val);
     return 0;
 }
