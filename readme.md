@@ -1,6 +1,6 @@
 # ztsingou
 
-this is mostly a test / proof of concept for integrating external engines with a norns script.
+this is mostly a test / proof of concept for integrating external audio-processing engines with a norns script.
 
 
 ## engine structure
