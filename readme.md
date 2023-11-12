@@ -56,7 +56,7 @@ global paramaeters:
 'gain',
 
 -- iterations per sample. this is rounded to an integer. 
--- increaseing IPS divides pitch, multiplies CPU
+-- increasing IPS multiplies both pitch and CPU
 'ips', 
 
 -- number of masses to compute per string
