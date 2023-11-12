@@ -1,6 +1,14 @@
- -- ztsingou
- -- chaotic resonator
- -- (POC / test for external engine integration)
+-- ztsingou
+-- chaotic resonator
+-- (POC / test for external engine integration)
+--
+-- K2, K3: pluck strings
+-- E2, E2: change parameter per string
+-- E1: select string parameter
+-- K1: hold for finer adjustment
+--
+-- global parameters are available in the menu
+-- in particular, increase `gain` for audio input
 
 local e = include('lib/ztsingou-engine')
 
@@ -53,7 +61,7 @@ local vm =
     },
     r = {
         pluck = false,
-        label = 'beta_1',
+        label = 'beta_2',
         value = '?'
     },
 }
@@ -97,27 +105,11 @@ enc = function(n, z)
         vm.r.label = ctl_assign[ctl.assign][2]
     end
     if n == 2 then
-        -- if ctl.alt then
-        --     params:delta('epsilon_1', z * 0.2)
-        --     vm.l.value = params:get('epsilon_1')
-        -- else
-        --     params:delta('beta_1', z * 0.05)
-        --     vm.l.value = params:get('beta_1')
-        -- end
-
-        -- FIXME: would be nice to vary delta by assigned param
         local k = ctl_assign[ctl.assign][1]
         local d = ctl.alt and 0.02 or 0.1
         params:delta(k, z * d)
         vm.l.value = params:get(k)
     elseif n == 3 then
-        -- if ctl.alt then
-        --     params:delta('epsilon_2', z * 0.2)
-        --     vm.r.value = params:get('epsilon_2')
-        -- else
-        --     params:delta('beta_2', z * 0.05)
-        --     vm.r.value = params:get('beta_2')
-        -- end
         local k = ctl_assign[ctl.assign][2]
         params:delta(k, z * 0.05)
         vm.r.value = params:get(k)
