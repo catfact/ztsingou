@@ -99,28 +99,21 @@ local client = { "127.0.0.1", "9998" }
 for id, idx in pairs(param_string_ids) do
     e[id] = function (string, value)
 		-- convert the string index to zero-base here		
-		print("setting param: "..id.."["..string.."]")
+		-- print("setting param: "..id.."["..string.."]")
         osc.send(client, "/param/string", {idx, string-1, value})
     end
 end
 
 for id, idx in pairs(param_global_ids) do
     e[id] = function (value)
-		print("setting param: "..id)	
+		-- print("setting param: "..id)	
         osc.send(client, "/param/global", {idx, value})
     end
-end
-
---tab.print(e)
-print("--- engine table: ")
-for k,v in pairs(e) do
-	print(""..k.."\t"..tostring(v))
 end
 
 local did_init = false
 
 local add_params = function()
-	print("adding engine params...")
 	params:add_separator("ztsingou")
 
 	-- TODO: building these programatically is concise, but quick and dirty
