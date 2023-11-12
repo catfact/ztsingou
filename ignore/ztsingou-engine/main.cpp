@@ -31,6 +31,7 @@ int process(jack_nframes_t nframes, void *data) {
     out[1] = (jack_default_audio_sample_t *) jack_port_get_buffer(outPort[1], nframes);
 
     auto s = static_cast<Synth*>(data);
+
     s->processAudioBlockNonInterleaved(in, out, nframes);
 
     return 0;

@@ -3,7 +3,7 @@
 /*
   fermi-pasta-ulam-tsingou resonator
 
-  this is a "physical" model of a nonlinear string.
+  this is a simple "physical" model of a nonlinear string.
 
   the string is a number of connected masses
 
@@ -144,7 +144,9 @@ public:
     void set_masses(unsigned int num) { 
         if (num < NUM_MASSES) {
             masses = num;
-            x[masses-1] = 0.0;
+            for (int masses-1; i<NUM_MASSSES; i++) {
+                x[i] = 0.0;
+            }
         }
 
     }

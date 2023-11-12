@@ -189,8 +189,11 @@ e.init = function(callback)
 	-- norns.system_cmd(runsh)
 
 	--- use os.execute() instead, for now
-	os.execute(runsh)
-    
+
+	-------------
+	--- testing: run it manually
+	-- os.execute(runsh)
+	------------
 end
 
 -- clean up the engine by sending a quit message
