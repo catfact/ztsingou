@@ -48,7 +48,7 @@ local param_string_ranges = {
 	beta = {0.01, 30, 1},
 	epsilon = {0, 20, 0},
 	rho = {0, 20, 0.2},
-	pluck = {-1, 1, 0}
+	pluck = {-1, 1, 0.2}
 }
 
 --- ... do it all again for "global" parameters

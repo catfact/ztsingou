@@ -56,30 +56,26 @@ local vm =
 
 key = function(n, z) 
     if n == 1 then 
-        -- if z > 0 then
-        --     ctl.alt = true
-        --     vm.l.label = 'epsilon_1'
-        --     vm.r.label = 'epsilon_2'
-        -- else
-        --     ctl.alt = false
-        --     vm.l.label = 'beta_1' 
-        --     vm.r.label = 'beta_2' 
-        -- end
-        return
+        if z > 0 then
+            ctl.alt = true
+        else
+            ctl.alt = false
+        end
     else 
-        local x = math.random(1, 100) * 0.005
         if n == 2 then 
             if z == 0 then 
                 vm.l.pluck = false
             else
-                params:set('pluck_1', x)
+                -- FIXME: really just want to bang the param
+                -- (using zero delta doesn't seem to work?)
+                params:delta('pluck_1', 0.0001)
                 vm.l.pluck = true
             end
         elseif n == 3 then
             if z == 0 then 
                 vm.r.pluck = false
             else
-                params:set('pluck_2', x)
+                params:delta('pluck_2', 0.0001)
                 vm.r.pluck = true
             end
         end
@@ -107,7 +103,8 @@ enc = function(n, z)
 
         -- FIXME: would be nice to vary delta by assigned param
         local k = ctl_assign[ctl.assign][1]
-        params:delta(k, z * 0.05)
+        local d = ctl.alt and 0.02 or 0.1
+        params:delta(k, z * d)
         vm.l.value = params:get(k)
     elseif n == 3 then
         -- if ctl.alt then
