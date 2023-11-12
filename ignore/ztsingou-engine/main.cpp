@@ -82,11 +82,11 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, signal_handler);
     signal(SIGABRT, signal_handler);
 
-    const char* rxPort = "9999";
+    const char* rxPort = "9998";
     if (argc > 1) { 
         rxPort = argv[1];
     }
-    const char* txPort = "8888";
+    const char* txPort = "10111";
     if (argc > 2) { 
         txPort = argv[2];
     }

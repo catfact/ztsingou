@@ -144,7 +144,7 @@ public:
     void set_masses(unsigned int num) { 
         if (num < NUM_MASSES) {
             masses = num;
-            for (int masses-1; i<NUM_MASSSES; i++) {
+            for (int i = masses-1; i<NUM_MASSES; i++) {
                 x[i] = 0.0;
             }
         }

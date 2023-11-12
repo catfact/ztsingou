@@ -197,7 +197,6 @@ public:
                 this->pluck(string, (unsigned int) excPos[string], value);
                 break;
             case ParamStringId::Count:
-            default:;
                 break;
         }
     }
