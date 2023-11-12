@@ -98,10 +98,9 @@ local client = { "127.0.0.1", "9998" }
 -- create accessor functions for each parameter
 for id, idx in pairs(param_string_ids) do
     e[id] = function (string, value)
-		-- convert the string index to zero-base here
-		
+		-- convert the string index to zero-base here		
 		print("setting param: "..id.."["..string.."]")
-        osc.send(client, "/param/string", {string-1, idx, value})
+        osc.send(client, "/param/string", {idx, string-1, value})
     end
 end
 
@@ -189,11 +188,7 @@ e.init = function(callback)
 	-- norns.system_cmd(runsh)
 
 	--- use os.execute() instead, for now
-
-	-------------
-	--- testing: run it manually
-	-- os.execute(runsh)
-	------------
+	os.execute(runsh)
 end
 
 -- clean up the engine by sending a quit message
