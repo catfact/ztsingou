@@ -1,3 +1,7 @@
+ -- ztsingou
+ -- chaotic resonator
+ -- (POC / test for external engine integration)
+
 local e = include('lib/ztsingou-engine')
 
 local redraw_timer
