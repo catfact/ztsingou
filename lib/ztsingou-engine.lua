@@ -45,10 +45,10 @@ local param_string_ranges = {
 	pickupPos1 = {1, 14, 2},
 	pickupPos2 = {1, 14, 6},
 	excitePos = {1, 14, 5},
-	beta = {0, 30, 1},
+	beta = {0.01, 30, 1},
 	epsilon = {0, 20, 0},
 	rho = {0, 20, 0.2},
-	pluck = {0, 1, 0}
+	pluck = {-1, 1, 0.2}
 }
 
 --- ... do it all again for "global" parameters
@@ -84,9 +84,9 @@ local param_global_ids = {
 }
 
 local param_global_ranges = { 
-	spread = {0, 1, 1},
+	spread = {0, 1, 0.7},
 	mono = {0, 1, 0},
-	gain = {0, 2, 0},
+	gain = {0, 2, 0.0},
 	ips = {1, 32, 16},
 	masses = {3, 16, 8}
 }
@@ -98,30 +98,22 @@ local client = { "127.0.0.1", "9998" }
 -- create accessor functions for each parameter
 for id, idx in pairs(param_string_ids) do
     e[id] = function (string, value)
-		-- convert the string index to zero-base here
-		
-		print("setting param: "..id.."["..string.."]")
-        osc.send(client, "/param/string", {string-1, idx, value})
+		-- convert the string index to zero-base here		
+		-- print("setting param: "..id.."["..string.."] = "..value)
+        osc.send(client, "/param/string", {idx, string-1, value})
     end
 end
 
 for id, idx in pairs(param_global_ids) do
     e[id] = function (value)
-		print("setting param: "..id)	
+		-- print("setting param: "..id.."] = "..value)	
         osc.send(client, "/param/global", {idx, value})
     end
-end
-
---tab.print(e)
-print("--- engine table: ")
-for k,v in pairs(e) do
-	print(""..k.."\t"..tostring(v))
 end
 
 local did_init = false
 
 local add_params = function()
-	print("adding engine params...")
 	params:add_separator("ztsingou")
 
 	-- TODO: building these programatically is concise, but quick and dirty
@@ -189,11 +181,7 @@ e.init = function(callback)
 	-- norns.system_cmd(runsh)
 
 	--- use os.execute() instead, for now
-
-	-------------
-	--- testing: run it manually
-	-- os.execute(runsh)
-	------------
+	os.execute(runsh)
 end
 
 -- clean up the engine by sending a quit message
@@ -205,5 +193,12 @@ e.cleanup = function()
 	-- or just (wait) and:
 	-- os.execute("pidof ztsingou | xargs kill")
 end
+
+e.param_global_ids = param_global_ids
+e.param_string_ids = param_string_ids
+e.param_global_keys = param_global_keys
+e.param_string_keys = param_string_keys
+e.param_global_ranges = param_global_ranges
+e.param_string_ranges = param_string_ranges
 
 return e
