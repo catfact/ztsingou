@@ -1,7 +1,8 @@
 # ztsingou
 
-this is mostly a test / proof of concept for integrating external audio-processing engines with a norns script.
+this is a test / proof of concept for integrating external audio-processing engines with a norns script. 
 
+please note that this was authored very quickly, includes FIXMEs and likely bugs; PRs are welcome to improve its utility as an example. 
 
 ## engine structure
 
